@@ -4,15 +4,15 @@
 function currentPriority(agentName, steps, fallback) {
   for (let i = steps.length - 1; i >= 0; i--) {
     const s = steps[i];
-    if (s.stage === "layer2_round" && s.conceding_agent === agentName) {
-      return s.conceding_agent_new_priority;
+    if (s.stage === "concede" && s.agent_id === agentName) {
+      return s.new_priority;
     }
   }
   return fallback;
 }
 
 function concessionCount(agentName, steps) {
-  return steps.filter((s) => s.stage === "layer2_round" && s.conceding_agent === agentName).length;
+  return steps.filter((s) => s.stage === "concede" && s.agent_id === agentName).length;
 }
 
 export default function AgentProfileCard({ name, op, value, priority, tolerance, steps, accentClass }) {

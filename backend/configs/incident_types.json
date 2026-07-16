@@ -1,0 +1,30 @@
+[
+  {
+    "type": "high_latency_flow",
+    "domain": "cloud-infra",
+    "coupled": true,
+    "control_field": "inspection_level",
+    "derived_field": "latency_ms",
+    "coupling": {"intercept": 10.0, "slope": 17.5},
+    "agent_a": {"agent_id": "network_ops_agent", "field": "latency_ms", "op": "<=", "range": [45, 55], "priority": 0.8},
+    "agent_b": {"agent_id": "security_agent", "field": "inspection_level", "op": ">=", "range": [3, 5], "priority": 0.9}
+  },
+  {
+    "type": "bandwidth_saturation",
+    "domain": "cloud-infra",
+    "agent_a": {"agent_id": "network_ops_agent", "field": "bandwidth_mbps", "op": ">=", "range": [400, 800], "priority": 0.7},
+    "agent_b": {"agent_id": "security_agent", "field": "bandwidth_mbps", "op": "<=", "range": [150, 400], "priority": 0.6}
+  },
+  {
+    "type": "unauthorized_access_attempt",
+    "domain": "zero-trust",
+    "agent_a": {"agent_id": "network_ops_agent", "field": "access_level", "op": ">=", "range": [4, 7], "priority": 0.5},
+    "agent_b": {"agent_id": "security_agent", "field": "access_level", "op": "<=", "range": [1, 3], "priority": 0.9}
+  },
+  {
+    "type": "policy_drift_detected",
+    "domain": "zero-trust",
+    "agent_a": {"agent_id": "network_ops_agent", "field": "inspection_level", "op": "<=", "range": [1, 3], "priority": 0.4},
+    "agent_b": {"agent_id": "security_agent", "field": "inspection_level", "op": ">=", "range": [4, 8], "priority": 0.9}
+  }
+]

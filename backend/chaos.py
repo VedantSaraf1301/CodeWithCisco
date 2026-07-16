@@ -12,16 +12,17 @@ from typing import Dict
 from csp.negotiate import negotiate
 from accelerator import accelerate
 from fabric import Fabric
-from incidents import INCIDENT_TYPES, REGIONS, build_negotiation_states, incident_signature
+from incidents import agents_for_incident_type, get_incident_types, get_regions, build_negotiation_states, incident_signature
 
 
 def inject_chaos(fabric: Fabric, trust_registry: Dict[str, float]) -> Dict:
-    template = random.choice(INCIDENT_TYPES)
-    region = random.choice(REGIONS)
+    template = random.choice(get_incident_types())
+    region = random.choice(get_regions())
     incident_type, domain = template["type"], template["domain"]
 
-    trust_a = trust_registry.get("network_ops_agent", 0.0)
-    trust_b = trust_registry.get("security_agent", 0.0)
+    agent_a_id, agent_b_id = agents_for_incident_type(incident_type)
+    trust_a = trust_registry.get(agent_a_id, 0.0)
+    trust_b = trust_registry.get(agent_b_id, 0.0)
     state_a, state_b, domain_scope, true_asks = build_negotiation_states(
         incident_type, domain, region, trust_a, trust_b
     )

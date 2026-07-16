@@ -1,5 +1,5 @@
 import Head from "next/head";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import PageHeader from "../components/PageHeader";
 import NegotiationArena from "../components/NegotiationArena";
 import AgentProfileCard from "../components/AgentProfileCard";
@@ -9,27 +9,60 @@ const FIELD_SUGGESTIONS = ["inspection_level", "latency_ms", "bandwidth_mbps", "
 
 const DEFAULTS = {
   field: "inspection_level",
-  agentA: { name: "Throughput Agent", op: "<=", value: 2, priority: 0.5 },
-  agentB: { name: "Security Agent", op: ">=", value: 6, priority: 0.9 },
-  tolerance: 0.3,
+  agentA: {
+    personaId: "network_ops_agent", name: "Network Ops Agent",
+    op: "<=", value: 2, priority: 0.5, tolerance: 0.3, trustScore: 0,
+  },
+  agentB: {
+    personaId: "security_agent", name: "Security Agent",
+    op: ">=", value: 6, priority: 0.9, tolerance: 0.3, trustScore: 0,
+  },
   negotiationBudget: 5,
-  trustScore: 0,
   tiebreakWinner: "b",
 };
 
-function AgentForm({ label, agent, onChange, accentClass }) {
+function AgentForm({ label, agent, onChange, accentClass, roster }) {
+  const applyPersona = (agentId) => {
+    const persona = roster.find((p) => p.agent_id === agentId);
+    if (!persona) {
+      onChange({ ...agent, personaId: "" });
+      return;
+    }
+    onChange({
+      ...agent,
+      personaId: agentId,
+      name: persona.display_name,
+      op: persona.suggested_op || agent.op,
+      priority: persona.suggested_priority ?? agent.priority,
+    });
+  };
+
   return (
     <div className={`agent-form ${accentClass}`}>
       <div className="agent-form-label">{label}</div>
+
+      <label className="form-field">
+        <span>Pick an agent</span>
+        <select value={agent.personaId || ""} onChange={(e) => applyPersona(e.target.value)}>
+          <option value="">Custom&hellip;</option>
+          {roster.map((p) => (
+            <option value={p.agent_id} key={p.agent_id}>
+              {p.display_name}
+            </option>
+          ))}
+        </select>
+      </label>
+
       <label className="form-field">
         <span>Name</span>
         <input
           type="text"
           value={agent.name}
-          onChange={(e) => onChange({ ...agent, name: e.target.value })}
+          onChange={(e) => onChange({ ...agent, name: e.target.value, personaId: "" })}
           placeholder="e.g. Throughput Agent"
         />
       </label>
+
       <div className="form-row">
         <label className="form-field">
           <span>Wants field</span>
@@ -40,13 +73,10 @@ function AgentForm({ label, agent, onChange, accentClass }) {
         </label>
         <label className="form-field">
           <span>Value</span>
-          <input
-            type="number"
-            value={agent.value}
-            onChange={(e) => onChange({ ...agent, value: e.target.value })}
-          />
+          <input type="number" value={agent.value} onChange={(e) => onChange({ ...agent, value: e.target.value })} />
         </label>
       </div>
+
       <label className="form-field">
         <span>How much it cares: {Number(agent.priority).toFixed(1)}</span>
         <input
@@ -58,22 +88,53 @@ function AgentForm({ label, agent, onChange, accentClass }) {
           onChange={(e) => onChange({ ...agent, priority: e.target.value })}
         />
       </label>
+
+      <div className="form-row">
+        <label className="form-field">
+          <span>Tolerance: {Number(agent.tolerance).toFixed(1)}</span>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.1"
+            value={agent.tolerance}
+            onChange={(e) => onChange({ ...agent, tolerance: e.target.value })}
+          />
+        </label>
+        <label className="form-field">
+          <span>Trust score: {Number(agent.trustScore).toFixed(1)}</span>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.1"
+            value={agent.trustScore}
+            onChange={(e) => onChange({ ...agent, trustScore: e.target.value })}
+          />
+        </label>
+      </div>
     </div>
   );
 }
 
 export default function SimulatorPage() {
+  const [roster, setRoster] = useState([]);
   const [field, setField] = useState(DEFAULTS.field);
   const [agentA, setAgentA] = useState(DEFAULTS.agentA);
   const [agentB, setAgentB] = useState(DEFAULTS.agentB);
-  const [tolerance, setTolerance] = useState(DEFAULTS.tolerance);
   const [negotiationBudget, setNegotiationBudget] = useState(DEFAULTS.negotiationBudget);
-  const [trustScore, setTrustScore] = useState(DEFAULTS.trustScore);
   const [tiebreakWinner, setTiebreakWinner] = useState(DEFAULTS.tiebreakWinner);
 
   const [running, setRunning] = useState(false);
   const [steps, setSteps] = useState([]);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/api/agents`)
+      .then((r) => r.json())
+      .then(setRoster)
+      .catch(() => {});
+  }, []);
 
   const runNegotiation = async () => {
     setError(null);
@@ -90,16 +151,18 @@ export default function SimulatorPage() {
             op: agentA.op,
             value: Number(agentA.value),
             priority: Number(agentA.priority),
+            tolerance: Number(agentA.tolerance),
+            trust_score: Number(agentA.trustScore),
           },
           agent_b: {
             agent_id: agentB.name,
             op: agentB.op,
             value: Number(agentB.value),
             priority: Number(agentB.priority),
+            tolerance: Number(agentB.tolerance),
+            trust_score: Number(agentB.trustScore),
           },
-          tolerance: Number(tolerance),
           negotiation_budget: Number(negotiationBudget),
-          trust_score: Number(trustScore),
           tiebreak_winner: tiebreakWinner === "none" ? null : tiebreakWinner,
         }),
       });
@@ -145,38 +208,34 @@ export default function SimulatorPage() {
       <PageHeader
         kicker="Sandbox"
         title="Negotiation Simulator"
-        subtitle="Two independent agents, each with their own hard limit and negotiable priority. Every step below is streamed the instant it's computed, not replayed from a finished result."
+        subtitle="Pick two agents (or make your own) and a field they both want to control. Every step below is streamed the instant it's computed, not replayed from a finished result."
       />
 
       <div className="sim-layout">
         <div className="sim-form-panel">
           <label className="form-field">
             <span>Field they're both negotiating over</span>
-            <input type="text" list="field-suggestions" value={field} onChange={(e) => setField(e.target.value)} />
-            <datalist id="field-suggestions">
-              {FIELD_SUGGESTIONS.map((f) => (
-                <option value={f} key={f} />
-              ))}
-            </datalist>
+            <input type="text" value={field} onChange={(e) => setField(e.target.value)} />
           </label>
+          <div className="field-chip-row">
+            {FIELD_SUGGESTIONS.map((f) => (
+              <button
+                type="button"
+                key={f}
+                className={`field-chip ${field === f ? "active" : ""}`}
+                onClick={() => setField(f)}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
 
           <div className="agent-forms">
-            <AgentForm label="Agent A" agent={agentA} onChange={setAgentA} accentClass="a" />
-            <AgentForm label="Agent B" agent={agentB} onChange={setAgentB} accentClass="b" />
+            <AgentForm label="Agent A" agent={agentA} onChange={setAgentA} accentClass="a" roster={roster} />
+            <AgentForm label="Agent B" agent={agentB} onChange={setAgentB} accentClass="b" roster={roster} />
           </div>
 
           <div className="sim-settings">
-            <label className="form-field">
-              <span>Tolerance: {Number(tolerance).toFixed(1)}</span>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.1"
-                value={tolerance}
-                onChange={(e) => setTolerance(e.target.value)}
-              />
-            </label>
             <label className="form-field">
               <span>Negotiation budget: {negotiationBudget} rounds</span>
               <input
@@ -186,17 +245,6 @@ export default function SimulatorPage() {
                 step="1"
                 value={negotiationBudget}
                 onChange={(e) => setNegotiationBudget(e.target.value)}
-              />
-            </label>
-            <label className="form-field">
-              <span>Trust score: {Number(trustScore).toFixed(1)}</span>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.1"
-                value={trustScore}
-                onChange={(e) => setTrustScore(e.target.value)}
               />
             </label>
             <label className="form-field">
@@ -222,7 +270,7 @@ export default function SimulatorPage() {
               op={agentA.op}
               value={agentA.value}
               priority={agentA.priority}
-              tolerance={tolerance}
+              tolerance={agentA.tolerance}
               steps={steps}
               accentClass="a"
             />
@@ -231,7 +279,7 @@ export default function SimulatorPage() {
               op={agentB.op}
               value={agentB.value}
               priority={agentB.priority}
-              tolerance={tolerance}
+              tolerance={agentB.tolerance}
               steps={steps}
               accentClass="b"
             />

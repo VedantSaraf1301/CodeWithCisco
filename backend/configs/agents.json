@@ -1,0 +1,56 @@
+[
+  {
+    "agent_id": "network_ops_agent",
+    "display_name": "Network Ops Agent",
+    "mission": "keep enterprise traffic flowing",
+    "risk_level": "low",
+    "suggested_field": "latency_ms",
+    "suggested_op": "<=",
+    "suggested_priority": 0.7
+  },
+  {
+    "agent_id": "security_agent",
+    "display_name": "Security Agent",
+    "mission": "enforce zero-trust security posture",
+    "risk_level": "high",
+    "suggested_field": "inspection_level",
+    "suggested_op": ">=",
+    "suggested_priority": 0.9
+  },
+  {
+    "agent_id": "compliance_agent",
+    "display_name": "Compliance Agent",
+    "mission": "keep every change auditable and within regulatory bounds",
+    "risk_level": "high",
+    "suggested_field": "access_level",
+    "suggested_op": "<=",
+    "suggested_priority": 0.8
+  },
+  {
+    "agent_id": "cost_optimizer_agent",
+    "display_name": "Cost Optimizer Agent",
+    "mission": "minimize cloud spend without breaching SLAs",
+    "risk_level": "low",
+    "suggested_field": "bandwidth_mbps",
+    "suggested_op": "<=",
+    "suggested_priority": 0.6
+  },
+  {
+    "agent_id": "reliability_agent",
+    "display_name": "Reliability Agent",
+    "mission": "maximize uptime and failover headroom",
+    "risk_level": "medium",
+    "suggested_field": "bandwidth_mbps",
+    "suggested_op": ">=",
+    "suggested_priority": 0.7
+  },
+  {
+    "agent_id": "data_privacy_agent",
+    "display_name": "Data Privacy Agent",
+    "mission": "minimize data exposure and retention",
+    "risk_level": "high",
+    "suggested_field": "access_level",
+    "suggested_op": "<=",
+    "suggested_priority": 0.85
+  }
+]

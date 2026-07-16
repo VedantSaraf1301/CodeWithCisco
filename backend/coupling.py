@@ -12,28 +12,27 @@ coupling's inverse function before negotiation, so both agents end up
 negotiating over the same field name. The projection only ever happens
 outside negotiate() (in incidents.py), so the guardrail's independent
 re-verification still compares against the exact same projected inputs.
+
+The coupling coefficients (intercept, slope) are supplied by the caller,
+read from each incident type's own config entry -- not hardcoded here, so
+a new coupled incident type is a new config entry, not a code change.
 """
 from typing import Dict
 
-# derived_value = intercept + slope * control_value (slope assumed positive:
-# every coupling below is "more control -> more derived cost").
-COUPLINGS = {
-    ("inspection_level", "latency_ms"): {"intercept": 10.0, "slope": 17.5},
-}
 
-
-def project_to_control_field(control_field: str, derived_field: str, derived_constraint: Dict) -> Dict:
+def project_to_control_field(derived_constraint: Dict, coupling: Dict) -> Dict:
     """Rewrites a constraint expressed on the derived field (e.g.
     latency_ms <= 50) into an equivalent constraint on the control field
-    (e.g. inspection_level <= 2.29), using the coupling's inverse."""
-    coupling = COUPLINGS[(control_field, derived_field)]
+    (e.g. inspection_level <= 2.29), using the coupling's inverse.
+    coupling: {"intercept": float, "slope": float} such that
+    derived_value = intercept + slope * control_value (slope > 0: more
+    control always costs more on the derived field)."""
     control_value = (derived_constraint["value"] - coupling["intercept"]) / coupling["slope"]
     return {"op": derived_constraint["op"], "value": control_value}
 
 
-def derive(control_field: str, derived_field: str, control_value: float) -> float:
+def derive(control_value: float, coupling: Dict) -> float:
     """Given the negotiated control-field value, compute the resulting
     derived-field value, purely for human-readable display -- never fed
     back into negotiation, the guardrail, or the Fabric's stored resolution."""
-    coupling = COUPLINGS[(control_field, derived_field)]
     return round(coupling["intercept"] + coupling["slope"] * control_value, 2)

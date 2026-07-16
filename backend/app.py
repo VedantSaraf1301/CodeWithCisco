@@ -9,8 +9,9 @@ import threading
 
 from flask import Flask, Response, jsonify, request
 
+from config_loader import load_agents
 from fabric import Fabric
-from incidents import INCIDENT_TYPES, REGIONS, pick_random_incident, run_incident
+from incidents import get_incident_types as list_incident_types, get_regions as list_regions, pick_random_incident, run_incident
 from chaos import inject_chaos
 from audit_demo import run_audit_demo
 from agents import build_agents_from_request, negotiate_streaming
@@ -61,7 +62,7 @@ def simulate_incident():
         picked = pick_random_incident()
         incident_type, domain, region = picked["incident_type"], picked["domain"], picked["region"]
     elif not region:
-        region = REGIONS[0]
+        region = list_regions()[0]
 
     outcome = run_incident(fabric, trust_registry, incident_type, domain, region)
     _broadcast(outcome)
@@ -74,8 +75,8 @@ def get_fabric():
 
 
 @app.route("/api/incident-types", methods=["GET"])
-def get_incident_types():
-    return jsonify({"incident_types": INCIDENT_TYPES, "regions": REGIONS})
+def incident_types_route():
+    return jsonify({"incident_types": list_incident_types(), "regions": list_regions()})
 
 
 @app.route("/api/chaos/inject", methods=["POST", "OPTIONS"])
@@ -94,6 +95,14 @@ def audit_inject():
     outcome = run_audit_demo(fabric)
     _broadcast({"audit_demo": True, **outcome})
     return jsonify(outcome)
+
+
+@app.route("/api/agents", methods=["GET"])
+def agents_route():
+    """Selectable roster for the Simulator page -- reads
+    configs/agents.json fresh on every call, so adding a new persona is a
+    new config entry, not a code change."""
+    return jsonify(list(load_agents().values()))
 
 
 @app.route("/api/simulate/negotiation", methods=["POST", "OPTIONS"])
