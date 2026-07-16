@@ -1,0 +1,21 @@
+# Python
+backend/venv/
+backend/__pycache__/
+backend/**/__pycache__/
+*.pyc
+backend/fabric.db
+backend/fabric_test.db
+backend/flask.log
+
+# Node / Next.js
+frontend/node_modules/
+frontend/.next/
+frontend/nextdev.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+
+.claude
