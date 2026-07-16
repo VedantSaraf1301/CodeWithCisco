@@ -59,9 +59,14 @@ def simulate_incident():
     region = body.get("region") or body.get("context")
 
     if not incident_type or not domain:
+        # Random incident type, but a region the caller explicitly chose
+        # must still be honored -- only fall back to a random region too
+        # when the caller didn't ask for one either.
         picked = pick_random_incident()
-        incident_type, domain, region = picked["incident_type"], picked["domain"], picked["region"]
-    elif not region:
+        incident_type, domain = picked["incident_type"], picked["domain"]
+        if not region:
+            region = picked["region"]
+    if not region:
         region = list_regions()[0]
 
     outcome = run_incident(fabric, trust_registry, incident_type, domain, region)

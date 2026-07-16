@@ -28,20 +28,13 @@ function AgentAskCard({ agentId, ask }) {
   );
 }
 
-const STEP_ACCENT = {
-  commit_reveal: "var(--series-blue)",
-  layer0_layer1: "var(--series-aqua)",
-  layer2: "var(--status-warning)",
-  layer3: "var(--status-serious)",
-};
-
 function NegotiationSteps({ steps }) {
   return (
     <div className="steps">
       {steps.map((step, i) => {
         if (step.stage === "commit_reveal") {
           return (
-            <div className="step" style={{ "--step-accent": STEP_ACCENT.commit_reveal }} key={i}>
+            <div className="step" key={i}>
               <div className="step-title">Commit then Reveal</div>
               <div className="step-body">
                 Verified: {String(step.verified)}
@@ -55,7 +48,7 @@ function NegotiationSteps({ steps }) {
         }
         if (step.stage === "layer0_layer1") {
           return (
-            <div className="step" style={{ "--step-accent": STEP_ACCENT.layer0_layer1 }} key={i}>
+            <div className="step" key={i}>
               <div className="step-title">Layer 0/1: Weighted Utility Scoring</div>
               <div className="step-body">
                 Fully feasible: {String(step.all_feasible)}, within tolerance: {String(step.within_tolerance)}
@@ -67,7 +60,7 @@ function NegotiationSteps({ steps }) {
         }
         if (step.stage === "layer2") {
           return (
-            <div className="step" style={{ "--step-accent": STEP_ACCENT.layer2 }} key={i}>
+            <div className="step" key={i}>
               <div className="step-title">
                 Layer 2: Bounded Relaxation ({step.rounds_used} of {step.effective_budget} rounds, succeeded:{" "}
                 {String(step.success)})
@@ -85,7 +78,7 @@ function NegotiationSteps({ steps }) {
         }
         if (step.stage === "layer3") {
           return (
-            <div className="step" style={{ "--step-accent": STEP_ACCENT.layer3 }} key={i}>
+            <div className="step" key={i}>
               <div className="step-title">Layer 3: Deterministic Policy Tie-Break</div>
               <div className="step-body">
                 {step.mitigations.map((m, mi) => (

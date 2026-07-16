@@ -1,6 +1,7 @@
 import Head from "next/head";
 import PageHeader from "../components/PageHeader";
 import StatTiles from "../components/StatTiles";
+import ChartsRow from "../components/ChartsRow";
 import Controls from "../components/Controls";
 import IncidentFeed from "../components/IncidentFeed";
 import { Icon } from "../lib/icons";
@@ -47,6 +48,8 @@ export default function Overview() {
         blockedWrites={stats.blockedWrites}
         icons={Icon}
       />
+
+      <ChartsRow feed={feed} />
 
       <Controls
         incidentTypes={incidentTypes}
